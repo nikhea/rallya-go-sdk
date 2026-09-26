@@ -71,18 +71,19 @@ type Client struct {
 	onAuthFailure func()
 	http          *http.Client
 
-	Auth      *AuthService
-	Orgs      *OrgsService
-	Events    *EventsService
-	Tickets   *TicketsService
-	Orders    *OrdersService
-	Payments  *PaymentsService
-	Attendees *AttendeesService
-	Checkin   *CheckinService
-	Kits      *KitsService
-	Audit     *AuditService
-	Admin     *AdminService
-	Health    *HealthService
+	Auth          *AuthService
+	Orgs          *OrgsService
+	Events        *EventsService
+	Tickets       *TicketsService
+	Orders        *OrdersService
+	Payments      *PaymentsService
+	Attendees     *AttendeesService
+	Checkin       *CheckinService
+	Kits          *KitsService
+	Subscriptions *SubscriptionsService
+	Audit         *AuditService
+	Admin         *AdminService
+	Health        *HealthService
 
 	mu              sync.Mutex
 	refreshInflight chan refreshResult
@@ -131,6 +132,7 @@ func NewClient(opts Options) (*Client, error) {
 	c.Attendees = &AttendeesService{client: c}
 	c.Checkin = &CheckinService{client: c}
 	c.Kits = &KitsService{client: c}
+	c.Subscriptions = &SubscriptionsService{client: c}
 	c.Audit = &AuditService{client: c}
 	c.Admin = &AdminService{client: c}
 	c.Health = &HealthService{client: c}

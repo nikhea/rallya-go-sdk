@@ -408,8 +408,58 @@ type CollectionList struct {
 	Total int64           `json:"total"`
 }
 
-// --- Audit / Admin ---
+// --- Subscriptions (org tiers; attendee checkout stays one-off) ---
 
+type SubscriptionPlan string
+
+const (
+	SubscriptionPlanFree  SubscriptionPlan = "FREE"
+	SubscriptionPlanPro   SubscriptionPlan = "PRO"
+	SubscriptionPlanScale SubscriptionPlan = "SCALE"
+)
+
+type SubscriptionStatus string
+
+const (
+	SubscriptionStatusActive   SubscriptionStatus = "ACTIVE"
+	SubscriptionStatusPastDue  SubscriptionStatus = "PAST_DUE"
+	SubscriptionStatusCanceled SubscriptionStatus = "CANCELED"
+)
+
+type PlanLimits struct {
+	MaxEvents            int `json:"maxEvents"`
+	MaxMembers           int `json:"maxMembers"`
+	MaxAttendeesPerEvent int `json:"maxAttendeesPerEvent"`
+	MaxKitsPerEvent      int `json:"maxKitsPerEvent"`
+}
+
+type SubscriptionTier struct {
+	Plan         SubscriptionPlan `json:"plan"`
+	Name         string           `json:"name"`
+	PriceID      string           `json:"priceId,omitempty"`
+	MonthlyCents int64            `json:"monthlyCents,omitempty"`
+	Currency     string           `json:"currency,omitempty"`
+	Limits       PlanLimits       `json:"limits"`
+	Features     []string         `json:"features"`
+}
+
+type Subscription struct {
+	Plan              SubscriptionPlan   `json:"plan"`
+	Status            SubscriptionStatus `json:"status"`
+	CurrentPeriodEnd  string             `json:"currentPeriodEnd,omitempty"`
+	CancelAtPeriodEnd bool               `json:"cancelAtPeriodEnd"`
+}
+
+type CheckoutSession struct {
+	URL       string `json:"url"`
+	SessionID string `json:"sessionId"`
+}
+
+type PortalSession struct {
+	URL string `json:"url"`
+}
+
+// --- Audit / Admin ---
 type AuditEvent struct {
 	ID         string `json:"id"`
 	OrgID      string `json:"orgId,omitempty"`

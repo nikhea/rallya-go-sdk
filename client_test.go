@@ -387,3 +387,48 @@ func TestKitsURLsAndBodies(t *testing.T) {
 		t.Fatalf("list filter: %q", seen[2])
 	}
 }
+
+func TestSubscriptionsURLsAndCodes(t *testing.T) {
+	var seen []string
+	var bodies []string
+	var authHeaders []string
+	fix := &tokenFixture{pair: &TokenPair{AccessToken: "a", RefreshToken: "r"}}
+	c := newTokenClient(fix, func(r *http.Request) (*http.Response, error) {
+		var raw []byte
+		if r.Body != nil {
+			raw, _ = io.ReadAll(r.Body)
+		}
+		seen = append(seen, r.Method+" "+r.URL.String())
+		bodies = append(bodies, string(raw))
+		authHeaders = append(authHeaders, r.Header.Get("Authorization"))
+		if strings.HasSuffix(r.URL.Path, "/subscription/plans") {
+			return jsonResp(t, []any{
+				map[string]any{"plan": "FREE"},
+				map[string]any{"plan": "PRO"},
+				map[string]any{"plan": "SCALE"},
+			}, 200, nil), nil
+		}
+		if strings.HasSuffix(r.URL.Path, "/portal") {
+			return jsonResp(t, map[string]string{"error": "subscription billing unavailable", "code": "BILLING_UNAVAILABLE"}, 503, nil), nil
+		}
+		return jsonResp(t, map[string]string{"url": "https://checkout/session", "sessionId": "cs_1"}, 201, nil), nil
+	})
+	tiers, err := c.Subscriptions.ListPlans(context.Background())
+	if err != nil || len(tiers) != 3 {
+		t.Fatalf("plans: %v %+v", err, tiers)
+	}
+	if authHeaders[0] != "" {
+		t.Fatalf("catalog must send no auth, got %q", authHeaders[0])
+	}
+	if _, err := c.Subscriptions.Checkout(context.Background(), "acme", SubscriptionPlanPro); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(seen[1], "/orgs/acme/subscription/checkout") || !strings.Contains(bodies[1], `"plan":"PRO"`) {
+		t.Fatalf("checkout: %q %q", seen[1], bodies[1])
+	}
+	_, err = c.Subscriptions.Portal(context.Background(), "acme")
+	re, ok := err.(*RallyaError)
+	if !ok || re.Status != 503 || re.Code != "BILLING_UNAVAILABLE" {
+		t.Fatalf("portal: want 503 BILLING_UNAVAILABLE, got %v", err)
+	}
+}

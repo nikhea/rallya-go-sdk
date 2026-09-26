@@ -94,6 +94,12 @@ collected, err := client.Kits.Collect(ctx, "acme", "fest-2026", kit.ID,
 picked, err := client.Kits.MarkCollected(ctx, "acme", "fest-2026", collected.ID)   // PENDING → COLLECTED
 _, err = client.Kits.Void(ctx, "acme", "fest-2026", collected.ID)                  // frees re-issue
 
+// Subscriptions (org tiers FREE/PRO/SCALE; attendee checkout stays one-off)
+tiers, err := client.Subscriptions.ListPlans(ctx) // public catalog with limits + prices
+sub, err := client.Subscriptions.Get(ctx, "acme") // absent subscription reads FREE
+checkout, err := client.Subscriptions.Checkout(ctx, "acme", rallya.SubscriptionPlanPro) // OWNER
+portal, err := client.Subscriptions.Portal(ctx, "acme") // OWNER self-serve manage/cancel
+
 // Audit / Admin / Health
 audit, err := client.Audit.ListOrg(ctx, "acme", nil)
 orgs, err := client.Admin.ListOrgs(ctx, nil)
