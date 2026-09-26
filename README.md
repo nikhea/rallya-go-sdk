@@ -87,6 +87,13 @@ checkout, err := client.Payments.Checkout(ctx, order.ID) // Stripe redirect URL;
 batch, err := client.Checkin.ScanBatch(ctx, "acme", "fest-2026", codes) // ≤ 50 codes
 stats, err := client.Checkin.Stats(ctx, "acme", "fest-2026")
 
+// Kits (named kit types + per-attendee collections; CHECKED_IN required)
+kit, err := client.Kits.CreateKit(ctx, "acme", "fest-2026", rallya.CreateKitInput{Name: "VIP pack", QuantityTotal: 100})
+collected, err := client.Kits.Collect(ctx, "acme", "fest-2026", kit.ID,
+    rallya.CollectKitInput{AttendeeID: attendeeID, IdempotencyKey: "kit-req-001"}) // Reserve: true holds PENDING
+picked, err := client.Kits.MarkCollected(ctx, "acme", "fest-2026", collected.ID)   // PENDING → COLLECTED
+_, err = client.Kits.Void(ctx, "acme", "fest-2026", collected.ID)                  // frees re-issue
+
 // Audit / Admin / Health
 audit, err := client.Audit.ListOrg(ctx, "acme", nil)
 orgs, err := client.Admin.ListOrgs(ctx, nil)

@@ -348,3 +348,42 @@ func TestRejectsAmbiguousOrMissingAuth(t *testing.T) {
 		t.Fatalf("expected together error, got %v", err)
 	}
 }
+
+func TestKitsURLsAndBodies(t *testing.T) {
+	var seen []string
+	var bodies []string
+	fix := &tokenFixture{pair: &TokenPair{AccessToken: "a", RefreshToken: "r"}}
+	c := newTokenClient(fix, func(r *http.Request) (*http.Response, error) {
+		var raw []byte
+		if r.Body != nil {
+			raw, _ = io.ReadAll(r.Body)
+		}
+		seen = append(seen, r.Method+" "+r.URL.String())
+		bodies = append(bodies, string(raw))
+		if r.Method == "POST" && strings.HasSuffix(r.URL.Path, "/kits") {
+			return jsonResp(t, map[string]any{"id": "k1", "remaining": 2}, 201, nil), nil
+		}
+		if strings.HasSuffix(r.URL.Path, "/collect") {
+			return jsonResp(t, map[string]any{"id": "c1", "status": "COLLECTED"}, 201, nil), nil
+		}
+		return jsonResp(t, map[string]any{"items": []any{}, "total": 0}, 200, nil), nil
+	})
+	if _, err := c.Kits.CreateKit(context.Background(), "acme", "fest-2026", CreateKitInput{Name: "VIP pack", QuantityTotal: 2}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.Kits.Collect(context.Background(), "acme", "fest-2026", "k1", CollectKitInput{AttendeeID: "a1", IdempotencyKey: "k-1"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.Kits.ListCollections(context.Background(), "acme", "fest-2026", &CollectionFilter{Status: CollectionStatusCollected}); err != nil {
+		t.Fatal(err)
+	}
+	if got := seen[0]; got != "POST http://localhost:8080/api/v1/orgs/acme/events/fest-2026/kits" {
+		t.Fatalf("create URL: %q", got)
+	}
+	if !strings.HasSuffix(seen[1], "/kits/k1/collect") || !strings.Contains(bodies[1], `"idempotencyKey":"k-1"`) {
+		t.Fatalf("collect: %q %q", seen[1], bodies[1])
+	}
+	if !strings.Contains(seen[2], "/kit-collections?status=COLLECTED") {
+		t.Fatalf("list filter: %q", seen[2])
+	}
+}

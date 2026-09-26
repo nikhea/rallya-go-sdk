@@ -79,6 +79,7 @@ type Client struct {
 	Payments  *PaymentsService
 	Attendees *AttendeesService
 	Checkin   *CheckinService
+	Kits      *KitsService
 	Audit     *AuditService
 	Admin     *AdminService
 	Health    *HealthService
@@ -129,6 +130,7 @@ func NewClient(opts Options) (*Client, error) {
 	c.Payments = &PaymentsService{client: c}
 	c.Attendees = &AttendeesService{client: c}
 	c.Checkin = &CheckinService{client: c}
+	c.Kits = &KitsService{client: c}
 	c.Audit = &AuditService{client: c}
 	c.Admin = &AdminService{client: c}
 	c.Health = &HealthService{client: c}

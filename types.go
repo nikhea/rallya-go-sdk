@@ -344,6 +344,70 @@ type CheckinStats struct {
 	Total      int `json:"total"`
 }
 
+// --- Kits ---
+
+type CollectionStatus string
+
+const (
+	CollectionStatusPending   CollectionStatus = "PENDING"
+	CollectionStatusCollected CollectionStatus = "COLLECTED"
+	CollectionStatusVoided    CollectionStatus = "VOIDED"
+)
+
+type CreateKitInput struct {
+	Name          string `json:"name"`
+	Description   string `json:"description,omitempty"`
+	QuantityTotal int    `json:"quantityTotal"`
+}
+
+type UpdateKitInput struct {
+	Name          *string `json:"name,omitempty"`
+	Description   *string `json:"description,omitempty"`
+	QuantityTotal *int    `json:"quantityTotal,omitempty"`
+}
+
+type KitType struct {
+	ID            string `json:"id"`
+	EventID       string `json:"eventId"`
+	Name          string `json:"name"`
+	Description   string `json:"description,omitempty"`
+	QuantityTotal int    `json:"quantityTotal"`
+	Pending       int64  `json:"pending"`
+	Collected     int64  `json:"collected"`
+	Voided        int64  `json:"voided"`
+	Remaining     int64  `json:"remaining"`
+	CreatedAt     string `json:"createdAt"`
+}
+
+type CollectKitInput struct {
+	AttendeeID     string `json:"attendeeId"`
+	Reserve        bool   `json:"reserve,omitempty"`
+	IdempotencyKey string `json:"idempotencyKey,omitempty"`
+}
+
+type KitCollection struct {
+	ID          string           `json:"id"`
+	KitID       string           `json:"kitId"`
+	KitName     string           `json:"kitName,omitempty"`
+	EventID     string           `json:"eventId"`
+	AttendeeID  string           `json:"attendeeId"`
+	Status      CollectionStatus `json:"status"`
+	CollectedAt string           `json:"collectedAt,omitempty"`
+	CollectedBy string           `json:"collectedBy,omitempty"`
+	CreatedAt   string           `json:"createdAt"`
+}
+
+type CollectionFilter struct {
+	KitID      string
+	Status     CollectionStatus
+	AttendeeID string
+}
+
+type CollectionList struct {
+	Items []KitCollection `json:"items"`
+	Total int64           `json:"total"`
+}
+
 // --- Audit / Admin ---
 
 type AuditEvent struct {
