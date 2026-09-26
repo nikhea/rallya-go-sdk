@@ -259,23 +259,23 @@ type UpdateTicketInput struct {
 }
 
 type TicketType struct {
-	ID               string       `json:"id"`
-	EventID          string       `json:"eventId"`
-	Name             string       `json:"name"`
-	Description      string       `json:"description,omitempty"`
-	PriceCents       int          `json:"priceCents"`
-	Currency         string       `json:"currency"`
-	QuantityTotal    int          `json:"quantityTotal"`
-	QuantitySold     int          `json:"quantitySold"`
-	Remaining        int          `json:"remaining"`
-	ForSale          bool         `json:"forSale"`
-	UnavailableReason string      `json:"unavailableReason,omitempty"`
-	MaxPerOrder      *int         `json:"maxPerOrder,omitempty"`
-	SaleStartsAt     string       `json:"saleStartsAt,omitempty"`
-	SaleEndsAt       string       `json:"saleEndsAt,omitempty"`
-	Status           TicketStatus `json:"status"`
-	SoldOut          bool         `json:"soldOut"`
-	CreatedAt        string       `json:"createdAt"`
+	ID                string       `json:"id"`
+	EventID           string       `json:"eventId"`
+	Name              string       `json:"name"`
+	Description       string       `json:"description,omitempty"`
+	PriceCents        int          `json:"priceCents"`
+	Currency          string       `json:"currency"`
+	QuantityTotal     int          `json:"quantityTotal"`
+	QuantitySold      int          `json:"quantitySold"`
+	Remaining         int          `json:"remaining"`
+	ForSale           bool         `json:"forSale"`
+	UnavailableReason string       `json:"unavailableReason,omitempty"`
+	MaxPerOrder       *int         `json:"maxPerOrder,omitempty"`
+	SaleStartsAt      string       `json:"saleStartsAt,omitempty"`
+	SaleEndsAt        string       `json:"saleEndsAt,omitempty"`
+	Status            TicketStatus `json:"status"`
+	SoldOut           bool         `json:"soldOut"`
+	CreatedAt         string       `json:"createdAt"`
 }
 
 // --- Orders ---
