@@ -18,6 +18,15 @@ func pageQuery(q PageQuery) map[string]string {
 	return m
 }
 
+// eventPageQuery extracts the pagination input from an event filter.
+func eventPageQuery(f *EventFilter) *PageQuery {
+	if f == nil {
+		return nil
+	}
+	q := f.PageQuery
+	return &q
+}
+
 func eventFilterQuery(f *EventFilter) map[string]string {
 	m := map[string]string{}
 	if f == nil {
@@ -74,6 +83,15 @@ func auditQuery(q *AuditQuery) map[string]string {
 		m["until"] = q.Until
 	}
 	return m
+}
+
+// auditPageQuery extracts the pagination input from an audit query.
+func auditPageQuery(q *AuditQuery) *PageQuery {
+	if q == nil {
+		return nil
+	}
+	pq := q.PageQuery
+	return &pq
 }
 
 // --- Auth ---
@@ -161,7 +179,11 @@ func (s *OrgsService) ListMembers(ctx context.Context, idOrSlug string, q *PageQ
 	if q != nil {
 		query = pageQuery(*q)
 	}
-	return Do[Page[OrgMember]](ctx, s.client, "orgs/"+Seg(idOrSlug)+"/members", RequestOptions{Method: http.MethodGet, Query: query})
+	out, err := Do[Page[OrgMember]](ctx, s.client, "orgs/"+Seg(idOrSlug)+"/members", RequestOptions{Method: http.MethodGet, Query: query})
+	if err != nil {
+		return out, err
+	}
+	return FillPage(q, out), nil
 }
 
 type AddMemberInput struct {
@@ -196,8 +218,8 @@ type InviteInput struct {
 	Role  string `json:"role,omitempty"`
 }
 
-func (s *OrgsService) Invite(ctx context.Context, idOrSlug string, in InviteInput) (OrgInvite, error) {
-	return Do[OrgInvite](ctx, s.client, "orgs/"+Seg(idOrSlug)+"/invites", RequestOptions{Method: http.MethodPost, Body: in})
+func (s *OrgsService) Invite(ctx context.Context, idOrSlug string, in InviteInput) (MessageResponse, error) {
+	return Do[MessageResponse](ctx, s.client, "orgs/"+Seg(idOrSlug)+"/invites", RequestOptions{Method: http.MethodPost, Body: in})
 }
 
 func (s *OrgsService) ListInvites(ctx context.Context, idOrSlug string, q *PageQuery) (Page[OrgInvite], error) {
@@ -205,7 +227,11 @@ func (s *OrgsService) ListInvites(ctx context.Context, idOrSlug string, q *PageQ
 	if q != nil {
 		query = pageQuery(*q)
 	}
-	return Do[Page[OrgInvite]](ctx, s.client, "orgs/"+Seg(idOrSlug)+"/invites", RequestOptions{Method: http.MethodGet, Query: query})
+	out, err := Do[Page[OrgInvite]](ctx, s.client, "orgs/"+Seg(idOrSlug)+"/invites", RequestOptions{Method: http.MethodGet, Query: query})
+	if err != nil {
+		return out, err
+	}
+	return FillPage(q, out), nil
 }
 
 func (s *OrgsService) RevokeInvite(ctx context.Context, idOrSlug, inviteID string) error {
@@ -265,7 +291,11 @@ const maxCoverBytes = 5 * 1024 * 1024
 
 // ListPublic is public discovery (published only, no auth sent).
 func (s *EventsService) ListPublic(ctx context.Context, f *EventFilter) (Page[RallyaEvent], error) {
-	return Do[Page[RallyaEvent]](ctx, s.client, "events", RequestOptions{Method: http.MethodGet, Query: eventFilterQuery(f), NoAuth: true})
+	out, err := Do[Page[RallyaEvent]](ctx, s.client, "events", RequestOptions{Method: http.MethodGet, Query: eventFilterQuery(f), NoAuth: true})
+	if err != nil {
+		return out, err
+	}
+	return FillPage(eventPageQuery(f), out), nil
 }
 
 func (s *EventsService) GetPublic(ctx context.Context, idOrSlug string) (RallyaEvent, error) {
@@ -273,7 +303,11 @@ func (s *EventsService) GetPublic(ctx context.Context, idOrSlug string) (RallyaE
 }
 
 func (s *EventsService) ListOrg(ctx context.Context, orgIDOrSlug string, f *EventFilter) (Page[RallyaEvent], error) {
-	return Do[Page[RallyaEvent]](ctx, s.client, "orgs/"+Seg(orgIDOrSlug)+"/events", RequestOptions{Method: http.MethodGet, Query: eventFilterQuery(f)})
+	out, err := Do[Page[RallyaEvent]](ctx, s.client, "orgs/"+Seg(orgIDOrSlug)+"/events", RequestOptions{Method: http.MethodGet, Query: eventFilterQuery(f)})
+	if err != nil {
+		return out, err
+	}
+	return FillPage(eventPageQuery(f), out), nil
 }
 
 func (s *EventsService) Create(ctx context.Context, orgIDOrSlug string, in CreateEventInput) (RallyaEvent, error) {
@@ -324,27 +358,31 @@ func (s *EventsService) UploadImages(ctx context.Context, orgIDOrSlug, eventIDOr
 }
 
 func (s *EventsService) ListImages(ctx context.Context, orgIDOrSlug, eventIDOrSlug string) (Page[EventImage], error) {
-	return Do[Page[EventImage]](ctx, s.client, "orgs/"+Seg(orgIDOrSlug)+"/events/"+Seg(eventIDOrSlug)+"/images", RequestOptions{Method: http.MethodGet})
+	out, err := Do[Page[EventImage]](ctx, s.client, "orgs/"+Seg(orgIDOrSlug)+"/events/"+Seg(eventIDOrSlug)+"/images", RequestOptions{Method: http.MethodGet})
+	if err != nil {
+		return out, err
+	}
+	return FillPage(nil, out), nil
 }
 
 // --- Tickets ---
 
 type TicketsService struct{ client *Client }
 
-func (s *TicketsService) ListPublic(ctx context.Context, eventIDOrSlug string) ([]TicketType, error) {
-	out, err := Do[[]TicketType](ctx, s.client, "events/"+Seg(eventIDOrSlug)+"/tickets", RequestOptions{Method: http.MethodGet, NoAuth: true})
-	if out == nil && err == nil {
-		return []TicketType{}, nil
+func (s *TicketsService) ListPublic(ctx context.Context, eventIDOrSlug string) (Page[TicketType], error) {
+	out, err := Do[Page[TicketType]](ctx, s.client, "events/"+Seg(eventIDOrSlug)+"/tickets", RequestOptions{Method: http.MethodGet, NoAuth: true})
+	if err != nil {
+		return out, err
 	}
-	return out, err
+	return FillPage(nil, out), nil
 }
 
-func (s *TicketsService) List(ctx context.Context, orgIDOrSlug, eventIDOrSlug string) ([]TicketType, error) {
-	out, err := Do[[]TicketType](ctx, s.client, "orgs/"+Seg(orgIDOrSlug)+"/events/"+Seg(eventIDOrSlug)+"/tickets", RequestOptions{Method: http.MethodGet})
-	if out == nil && err == nil {
-		return []TicketType{}, nil
+func (s *TicketsService) List(ctx context.Context, orgIDOrSlug, eventIDOrSlug string) (Page[TicketType], error) {
+	out, err := Do[Page[TicketType]](ctx, s.client, "orgs/"+Seg(orgIDOrSlug)+"/events/"+Seg(eventIDOrSlug)+"/tickets", RequestOptions{Method: http.MethodGet})
+	if err != nil {
+		return out, err
 	}
-	return out, err
+	return FillPage(nil, out), nil
 }
 
 func (s *TicketsService) Create(ctx context.Context, orgIDOrSlug, eventIDOrSlug string, in CreateTicketInput) (TicketType, error) {
