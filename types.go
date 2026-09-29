@@ -83,6 +83,22 @@ type Page[T any] struct {
 	PerPage int `json:"perPage"`
 }
 
+// FillPage backfills Page/PerPage from the request when the server omits
+// them. Explicit request values win, then the server echo, then defaults.
+func FillPage[T any](q *PageQuery, p Page[T]) Page[T] {
+	if q != nil && q.Page > 0 {
+		p.Page = q.Page
+	} else if p.Page == 0 {
+		p.Page = 1
+	}
+	if q != nil && q.PerPage > 0 {
+		p.PerPage = q.PerPage
+	} else if p.PerPage == 0 {
+		p.PerPage = 20
+	}
+	return p
+}
+
 // --- Auth ---
 
 type RegisterInput struct {
@@ -404,8 +420,10 @@ type CollectionFilter struct {
 }
 
 type CollectionList struct {
-	Items []KitCollection `json:"items"`
-	Total int64           `json:"total"`
+	Items   []KitCollection `json:"items"`
+	Total   int64           `json:"total"`
+	Page    int             `json:"page,omitempty"`
+	PerPage int             `json:"perPage,omitempty"`
 }
 
 // --- Subscriptions (org tiers; attendee checkout stays one-off) ---

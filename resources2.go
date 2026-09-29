@@ -34,7 +34,11 @@ func (s *OrdersService) ListMine(ctx context.Context, q *PageQuery) (Page[Order]
 	if q != nil {
 		query = pageQuery(*q)
 	}
-	return Do[Page[Order]](ctx, s.client, "orders/mine", RequestOptions{Method: http.MethodGet, Query: query})
+	out, err := Do[Page[Order]](ctx, s.client, "orders/mine", RequestOptions{Method: http.MethodGet, Query: query})
+	if err != nil {
+		return out, err
+	}
+	return FillPage(q, out), nil
 }
 
 func (s *OrdersService) Get(ctx context.Context, orderID string) (Order, error) {
@@ -64,7 +68,11 @@ func (s *AttendeesService) ListMine(ctx context.Context, q *PageQuery) (Page[Att
 	if q != nil {
 		query = pageQuery(*q)
 	}
-	return Do[Page[Attendee]](ctx, s.client, "attendees/mine", RequestOptions{Method: http.MethodGet, Query: query})
+	out, err := Do[Page[Attendee]](ctx, s.client, "attendees/mine", RequestOptions{Method: http.MethodGet, Query: query})
+	if err != nil {
+		return out, err
+	}
+	return FillPage(q, out), nil
 }
 
 func (s *AttendeesService) GetMine(ctx context.Context, attendeeID string) (Attendee, error) {
@@ -80,7 +88,11 @@ func (s *AttendeesService) ListRoster(ctx context.Context, orgIDOrSlug, eventIDO
 	if q != nil {
 		query = pageQuery(*q)
 	}
-	return Do[Page[Attendee]](ctx, s.client, "orgs/"+Seg(orgIDOrSlug)+"/events/"+Seg(eventIDOrSlug)+"/attendees", RequestOptions{Method: http.MethodGet, Query: query})
+	out, err := Do[Page[Attendee]](ctx, s.client, "orgs/"+Seg(orgIDOrSlug)+"/events/"+Seg(eventIDOrSlug)+"/attendees", RequestOptions{Method: http.MethodGet, Query: query})
+	if err != nil {
+		return out, err
+	}
+	return FillPage(q, out), nil
 }
 
 type WalkInInput struct {
@@ -131,11 +143,19 @@ func (s *CheckinService) Stats(ctx context.Context, orgIDOrSlug, eventIDOrSlug s
 type AuditService struct{ client *Client }
 
 func (s *AuditService) ListOrg(ctx context.Context, orgIDOrSlug string, q *AuditQuery) (Page[AuditEvent], error) {
-	return Do[Page[AuditEvent]](ctx, s.client, "orgs/"+Seg(orgIDOrSlug)+"/audit", RequestOptions{Method: http.MethodGet, Query: auditQuery(q)})
+	out, err := Do[Page[AuditEvent]](ctx, s.client, "orgs/"+Seg(orgIDOrSlug)+"/audit", RequestOptions{Method: http.MethodGet, Query: auditQuery(q)})
+	if err != nil {
+		return out, err
+	}
+	return FillPage(auditPageQuery(q), out), nil
 }
 
 func (s *AuditService) ListPlatform(ctx context.Context, q *AuditQuery) (Page[AuditEvent], error) {
-	return Do[Page[AuditEvent]](ctx, s.client, "admin/audit", RequestOptions{Method: http.MethodGet, Query: auditQuery(q)})
+	out, err := Do[Page[AuditEvent]](ctx, s.client, "admin/audit", RequestOptions{Method: http.MethodGet, Query: auditQuery(q)})
+	if err != nil {
+		return out, err
+	}
+	return FillPage(auditPageQuery(q), out), nil
 }
 
 type AdminService struct{ client *Client }
@@ -145,7 +165,11 @@ func (s *AdminService) ListOrgs(ctx context.Context, q *PageQuery) (Page[AdminOr
 	if q != nil {
 		query = pageQuery(*q)
 	}
-	return Do[Page[AdminOrg]](ctx, s.client, "admin/orgs", RequestOptions{Method: http.MethodGet, Query: query})
+	out, err := Do[Page[AdminOrg]](ctx, s.client, "admin/orgs", RequestOptions{Method: http.MethodGet, Query: query})
+	if err != nil {
+		return out, err
+	}
+	return FillPage(q, out), nil
 }
 
 func (s *AdminService) GetOrg(ctx context.Context, id string) (map[string]any, error) {
@@ -171,7 +195,15 @@ func (s *AdminService) SearchUsers(ctx context.Context, q *UserSearchQuery) (Pag
 			query["q"] = q.Q
 		}
 	}
-	return Do[Page[map[string]any]](ctx, s.client, "admin/users", RequestOptions{Method: http.MethodGet, Query: query})
+	out, err := Do[Page[map[string]any]](ctx, s.client, "admin/users", RequestOptions{Method: http.MethodGet, Query: query})
+	if err != nil {
+		return out, err
+	}
+	var pq *PageQuery
+	if q != nil {
+		pq = &q.PageQuery
+	}
+	return FillPage(pq, out), nil
 }
 
 func (s *AdminService) GetUser(ctx context.Context, id string) (map[string]any, error) {
@@ -183,7 +215,11 @@ func (s *AdminService) ListUserOrders(ctx context.Context, id string, q *PageQue
 	if q != nil {
 		query = pageQuery(*q)
 	}
-	return Do[Page[map[string]any]](ctx, s.client, "admin/users/"+Seg(id)+"/orders", RequestOptions{Method: http.MethodGet, Query: query})
+	out, err := Do[Page[map[string]any]](ctx, s.client, "admin/users/"+Seg(id)+"/orders", RequestOptions{Method: http.MethodGet, Query: query})
+	if err != nil {
+		return out, err
+	}
+	return FillPage(q, out), nil
 }
 
 func (s *AdminService) SyncUserPolicies(ctx context.Context, id string) (PolicyDiff, error) {
